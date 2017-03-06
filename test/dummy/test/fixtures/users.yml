@@ -1,0 +1,9 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: admin_axel
+  role: 0
+
+two:
+  name: user_ursel
+  role: 1
