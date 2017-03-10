@@ -1,6 +1,6 @@
 module SeriousBusiness
-  class ViaAction < ApplicationRecord
-    belongs_to :actor, class_name: SeriousBusinessConfig.actor_class_name
+  class Action < ApplicationRecord
+    belongs_to :actor, class_name: SeriousBusiness.actor_class_name
     has_many :affecteds
     has_many :affectables, through: :affecteds
 
@@ -61,8 +61,8 @@ module SeriousBusiness
     end
 
 
-    def self.build(actor: , for_model: [], params: {} )
-      action = self.new(actor: actor)
+    def self.build(actor_id: , for_model: [], params: {} )
+      action = self.new(actor_id: actor_id)
       if params.respond_to? :require
         params = params
                   .require(param_name)
@@ -103,13 +103,15 @@ module SeriousBusiness
     def self.inherited(child_class)
       super
       method_name = child_class.name.demodulize.underscore
-      if self.actor_class.respond_to? method_name
+      actor_class = Kernel.const_get SeriousBusiness.actor_class_name
+
+      if actor_class.respond_to? method_name
         raise "Action with the same name already registered #{child_class.name}"
       end
 
       Rails.logger.debug "Registering action #{method_name}"
 
-      self.actor_class.send(:define_method, method_name) do |params: {}, for_model: nil|
+      actor_class.send(:define_method, method_name) do |params: {}, for_model: nil|
         child_class.build(actor_id: self.id, for_model: for_model, params: params)
       end
     end

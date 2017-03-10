@@ -7,9 +7,17 @@ module SeriousBusiness
   def self.config &blk
     @config ||= SeriousBusinessConfig.new
     blk.call(@config)
+
+    reload_actions!
   end
 
-  def self.actor_class
+
+  def self.actor_class_name
     @config.actor_class_name
   end
+
+  def self.reload_actions!
+    Dir[Rails.root.join('app','models', 'actions', '*.rb')].each {|file| load file }
+  end
+
 end
