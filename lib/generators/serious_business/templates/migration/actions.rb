@@ -6,8 +6,8 @@ class CreateSeriousBusiness < <%= migration_class_name %>
       t.timestamps null: false
     end
 
-    create_table :affecteds do |t|
-      t.references :serious_actions, foreign_key: true, null: false
+    create_table :serious_affecteds do |t|
+      t.references :serious_action, foreign_key: true, null: false
       t.integer :affected_id, null: false
       t.string :affected_type
     end

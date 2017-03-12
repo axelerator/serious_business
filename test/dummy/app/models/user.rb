@@ -1,4 +1,5 @@
 class User < ApplicationRecord
-  enum role: [:privileged, :unprivileged]
+  include SeriousBusiness::AffectedByActions
 
+  enum role: [:privileged, :unprivileged]
 end

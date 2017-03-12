@@ -127,7 +127,7 @@ module SeriousBusiness
           affected_models = self.execute
           self.save!
           affected_models.each do |model|
-            Affected.create!(via_action: self, affected: model)
+            Affected.create!(action: self, affected: model)
           end
           result = @subject || true
         rescue Exception => e
