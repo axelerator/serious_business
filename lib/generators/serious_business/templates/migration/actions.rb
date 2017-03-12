@@ -1,4 +1,4 @@
-class SorceryCore < <%= migration_class_name %>
+class CreateSeriousBusiness < <%= migration_class_name %>
   def change
     create_table :serious_actions do |t|
       t.string :type, null: false
@@ -7,8 +7,8 @@ class SorceryCore < <%= migration_class_name %>
     end
 
     create_table :affecteds do |t|
-      t.references :serious_action, foreign_key: true, null: false, type: :uuid
-      t.uuid :affected_id, null: false
+      t.references :serious_actions, foreign_key: true, null: false
+      t.integer :affected_id, null: false
       t.string :affected_type
     end
 

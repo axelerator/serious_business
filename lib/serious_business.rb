@@ -1,5 +1,5 @@
 require "serious_business/engine"
-
+require "generators/serious_business/install_generator"
 module SeriousBusiness
 
   SeriousBusinessConfig = Struct.new(:actor_class_name)

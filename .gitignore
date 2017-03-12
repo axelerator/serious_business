@@ -5,3 +5,5 @@ test/dummy/db/*.sqlite3
 test/dummy/db/*.sqlite3-journal
 test/dummy/log/*.log
 test/dummy/tmp/
+test/dummy/config/initializers/serious_business.rb
+test/dummy/db/migrate/20170312130702_create_serious_business.rb

@@ -1,7 +1,7 @@
+require 'rails/generators'
 require 'rails/generators/migration'
-require 'generators/sorcery/helpers'
 
-module Sorcery
+module SeriousBusiness
   module Generators
     class InstallGenerator < Rails::Generators::Base
       include Rails::Generators::Migration
@@ -20,7 +20,7 @@ module Sorcery
       def copy_migration_files
         # Copy core migration file in all cases except when you pass --only-submodules.
         return unless defined?(SeriousBusiness::Generators::InstallGenerator::ActiveRecord)
-        migration_template "migration/actions.rb", "db/migrate/serious_actions.rb", migration_class_name: migration_class_name
+        migration_template "migration/actions.rb", "db/migrate/create_serious_business.rb", migration_class_name: migration_class_name
 
       end
 

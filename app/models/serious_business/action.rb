@@ -1,5 +1,6 @@
 module SeriousBusiness
   class Action < ApplicationRecord
+    self.table_name= 'serious_actions'
     belongs_to :actor, class_name: SeriousBusiness.actor_class_name
     has_many :affecteds
     has_many :affectables, through: :affecteds

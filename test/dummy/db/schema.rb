@@ -10,7 +10,21 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170305171019) do
+ActiveRecord::Schema.define(version: 20170312130702) do
+
+  create_table "affecteds", force: :cascade do |t|
+    t.integer "serious_actions_id", null: false
+    t.integer "affected_id",        null: false
+    t.string  "affected_type"
+    t.index ["serious_actions_id"], name: "index_affecteds_on_serious_actions_id"
+  end
+
+  create_table "serious_actions", force: :cascade do |t|
+    t.string   "type",       null: false
+    t.integer  "actor_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
 
   create_table "users", force: :cascade do |t|
     t.string   "name"
