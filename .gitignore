@@ -7,3 +7,4 @@ test/dummy/log/*.log
 test/dummy/tmp/
 test/dummy/config/initializers/serious_business.rb
 test/dummy/db/migrate/*_create_serious_business.rb
+.byebug_history

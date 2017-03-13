@@ -21,6 +21,7 @@ module SeriousBusiness
     def self.needs(name)
       required_attributes << name.to_sym
       self.send(:attr_reader, name)
+      puts "----> #{self.name}: needs #{required_attributes}"
     end
 
     def self.form_model_class

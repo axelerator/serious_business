@@ -37,6 +37,16 @@ class UserTest < ActiveSupport::TestCase
     assert_equal creator, create_action.actor
   end
 
+  test 'update action affects database row' do
+    actor = users(:admin_axel)
+    user = users(:user_ursel)
 
+    new_name = 'NewName'
+    action = actor.update_user(for_model: user, params: {name: new_name})
+    assert action.execute!
+
+    reloaded_user = User.find(user.id)
+    assert_equal new_name, reloaded_user.name
+  end
 
 end
