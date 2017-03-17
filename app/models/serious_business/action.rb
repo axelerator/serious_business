@@ -104,6 +104,7 @@ module SeriousBusiness
 
     def self.inherited(child_class)
       super
+
       method_name = child_class.name.demodulize.underscore
       actor_class = Kernel.const_get SeriousBusiness.actor_class_name
 
@@ -111,15 +112,14 @@ module SeriousBusiness
         raise "Action with the same name already registered #{child_class.name}"
       end
 
-      Rails.logger.debug "Registering action #{method_name}"
+      puts "Registering action #{method_name}"
 
-      actor_class.send(:define_method, method_name) do |params: {}, for_model: nil|
+      SeriousBusiness::Actor.send(:define_method, method_name) do |params: {}, for_model: nil|
         child_class.build(actor_id: self.id, for_model: for_model, params: params)
       end
     end
 
     def execute!
-      result = nil
       self.class.transaction do
         begin
           if self.class.custom_attributes.any? && !form_model.valid?
@@ -130,27 +130,17 @@ module SeriousBusiness
           affected_models.each do |model|
             Affected.create!(action: self, affected: model)
           end
-          result = @subject || true
         rescue Exception => e
           raise e
         end
       end
-      result
     end
 
     protected
-
-    # use this from your execute method to set the object returned
-    # by the action when actalley being executed
-    def subject=(subject)
-      @subject = subject
-    end
 
     def execute
       raise "execute should be overwritten in subclass"
     end
   end
-
-
 end
 
