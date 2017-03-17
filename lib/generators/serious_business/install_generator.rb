@@ -8,12 +8,16 @@ module SeriousBusiness
 
       source_root File.expand_path('../templates', __FILE__)
 
-      class_option :primary_key_type, :optional => true, :type => :string, :banner => "primary_key_type",
-                   :desc => "Set to uuid if you're using uuid as primary key type"
+      class_option :use_uuid, :optional => true, :type => :string, :banner => "use_uuid",
+                   :desc => "Set to true if you're using uuid as primary key type"
 
       # Copy the initializer file to config/initializers folder.
       def copy_initializer_file
         template "initializer.rb", "config/initializers/serious_business.rb"
+      end
+
+      def use_uuid
+        options.key? :use_uuid
       end
 
       # Copy the migrations files to db/migrate folder
