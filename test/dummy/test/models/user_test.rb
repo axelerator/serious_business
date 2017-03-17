@@ -23,6 +23,9 @@ class UserTest < ActiveSupport::TestCase
     assert_difference 'User.count' do
       action.execute!
     end
+
+    new_user = User.order(:created_at).last
+    assert_equal 'MyNewUser', new_user.name
   end
 
   test 'created user knows who created it' do
@@ -47,6 +50,17 @@ class UserTest < ActiveSupport::TestCase
 
     reloaded_user = User.find(user.id)
     assert_equal new_name, reloaded_user.name
+  end
+
+  test 'PromoteUser actually promotes a user' do
+    actor = users(:admin_axel)
+    user = users(:user_ursel)
+
+    action = actor.promote_user(for_model: user)
+    assert action.execute!
+
+    reloaded_user = User.find(user.id)
+    assert reloaded_user.privileged?
   end
 
 end

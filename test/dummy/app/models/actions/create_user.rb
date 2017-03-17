@@ -2,7 +2,8 @@ class CreateUser < SeriousBusiness::Action
   att :name, presence: true
 
   def execute
-    new_user = User.create!(form_model.attributes)
+    user_params = form_model.attributes.merge(role: :unprivileged)
+    new_user = User.create!(user_params)
     [new_user]
   end
 end

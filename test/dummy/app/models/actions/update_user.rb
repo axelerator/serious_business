@@ -12,5 +12,3 @@ class UpdateUser < SeriousBusiness::Action
     [user]
   end
 end
-
-puts "LOADED UpdateUser #{UpdateUser.send(:instance_variable_get, '@_required_attributes')}"
