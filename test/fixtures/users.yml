@@ -7,3 +7,7 @@ admin_axel:
 user_ursel:
   name: user_ursel
   role: 1
+
+user_ulrich:
+  name: user_ulrich
+  role: 1

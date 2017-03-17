@@ -23,32 +23,59 @@ module SeriousBusiness
       self.send(:attr_reader, name)
     end
 
+    def self.guards
+      @_guards ||= []
+    end
+
+    IfGuard = Struct.new(:prc) do
+      def pass?(actor)
+        actor.instance_exec(&prc)
+      end
+    end
+
+    def self.allow_if prc
+      guards << IfGuard.new(prc)
+    end
+
+    def failed_guards
+      self.class.guards.select do |guard|
+        !guard.pass?(self.actor)
+      end
+    end
+
+    def can?
+      failed_guards.empty?
+    end
+
+    class BaseFormModel
+      include ActiveModel::AttributeAssignment
+      include ActiveModel::Validations
+
+      def persisted?
+        # is set on instantiation
+        @_action.persisted?
+      end
+
+      def to_key
+        nil
+      end
+
+      def to_param
+        @_action.class.param_name
+      end
+
+      def attributes
+        @_action.class.custom_attributes.inject({}) do |sum, attr_name|
+          sum[attr_name] = self.instance_variable_get("@#{attr_name}")
+          sum
+        end
+      end
+    end
+
     def self.form_model_class
       @model_class ||= begin
-                        clazz = Class.new do
-                          def persisted?
-                            # is set on instantiation
-                            @_action.persisted?
-                          end
-
-                          def to_key
-                            nil
-                          end
-
-                          def to_param
-                            @_action.class.param_name
-                          end
-
-                          def attributes
-                            @_action.class.custom_attributes.inject({}) do |sum, attr_name|
-                              sum[attr_name] = self.instance_variable_get("@#{attr_name}")
-                              sum
-                            end
-                          end
-                        end
+                        clazz = Class.new(BaseFormModel)
                         self.const_set(:FormModel, clazz)
-                        clazz.include ActiveModel::AttributeAssignment
-                        clazz.include ActiveModel::Validations
                         clazz
                        end
     end
@@ -60,7 +87,6 @@ module SeriousBusiness
     def self.param_name
       name.demodulize.underscore
     end
-
 
     def self.build(actor_id: , for_model: [], params: {} )
       action = self.new(actor_id: actor_id)
@@ -83,10 +109,10 @@ module SeriousBusiness
 
     def form_model(params={})
       @_form_model ||= begin
-        model_instance = self.class.form_model_class.new
-        model_instance.instance_variable_set(:@_action, self)
-        model_instance.assign_attributes(params || {})
-        model_instance
+                         model_instance = self.class.form_model_class.new
+                         model_instance.instance_variable_set(:@_action, self)
+                         model_instance.assign_attributes(params || {})
+                         model_instance
                        end
     end
 
@@ -119,6 +145,7 @@ module SeriousBusiness
     end
 
     def execute!
+      return false unless can?
       self.class.transaction do
         begin
           if self.class.custom_attributes.any? && !form_model.valid?

@@ -63,4 +63,17 @@ class UserTest < ActiveSupport::TestCase
     assert reloaded_user.privileged?
   end
 
+  test "Unprivileged user cannot promote other users" do
+    promoter = users(:user_ulrich)
+    promoted = users(:user_ursel)
+
+    action = promoter.promote_user(for_model: promoted)
+
+    refute action.can?
+    action.execute!
+
+    reloaded_promoted = User.find(promoted.id)
+    assert reloaded_promoted.unprivileged?
+  end
+
 end
