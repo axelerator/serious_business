@@ -11,7 +11,7 @@ module SeriousBusiness
       if !!options[:presence]
         self.form_model_class.validates name, presence: true
       end
-      self.custom_attributes << name
+      self.needed_attributes << name
     end
 
     def self.required_attributes
@@ -51,6 +51,11 @@ module SeriousBusiness
       include ActiveModel::AttributeAssignment
       include ActiveModel::Validations
 
+      def take_attributes_from(model, fields = nil)
+        fields ||= @_action.class.needed_attributes.map(&:to_s)
+        self.assign_attributes(model.attributes.slice(*fields))
+      end
+
       def persisted?
         # is set on instantiation
         @_action.persisted?
@@ -65,7 +70,7 @@ module SeriousBusiness
       end
 
       def attributes
-        @_action.class.custom_attributes.inject({}) do |sum, attr_name|
+        @_action.class.needed_attributes.inject({}) do |sum, attr_name|
           sum[attr_name] = self.instance_variable_get("@#{attr_name}")
           sum
         end
@@ -80,7 +85,7 @@ module SeriousBusiness
                        end
     end
 
-    def self.custom_attributes
+    def self.needed_attributes
       @_attribs ||= []
     end
 
@@ -93,7 +98,7 @@ module SeriousBusiness
       if params.respond_to? :require
         params = params
                   .require(param_name)
-                  .permit self.custom_attributes
+                  .permit self.needed_attributes
       end
       for_model = Array.wrap(for_model)
       self.required_attributes.each_with_index do |needed_name, idx|
@@ -148,7 +153,7 @@ module SeriousBusiness
       return false unless can?
       self.class.transaction do
         begin
-          if self.class.custom_attributes.any? && !form_model.valid?
+          if self.class.needed_attributes.any? && !form_model.valid?
             return nil
           end
           affected_models = self.execute

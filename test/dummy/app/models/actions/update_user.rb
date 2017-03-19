@@ -3,7 +3,7 @@ class UpdateUser < SeriousBusiness::Action
   att :name, presence: true
 
   def init_from_needed
-    form_model.assign_attributes(user.attributes.slice(*self.class.custom_attributes.map(&:to_s)).symbolize_keys)
+    form_model.take_attributes_from(user)
   end
 
 
