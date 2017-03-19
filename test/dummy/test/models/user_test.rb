@@ -76,4 +76,28 @@ class UserTest < ActiveSupport::TestCase
     assert reloaded_promoted.unprivileged?
   end
 
+  test "presence validation on form model" do
+    actor = users(:admin_axel)
+    user = users(:user_ursel)
+
+    action = actor.update_user(for_model: user, params: {name: nil})
+    refute action.execute!
+
+    assert action.form_model.errors.any?
+    assert action.form_model.errors[:name].any?
+    assert_equal 'can\'t be blank', action.form_model.errors[:name].first
+  end
+
+  test "length validation on form model" do
+    actor = users(:admin_axel)
+    user = users(:user_ursel)
+
+    action = actor.update_user(for_model: user, params: {name: 'ab'})
+    refute action.execute!
+
+    assert action.form_model.errors.any?
+    assert action.form_model.errors[:name].any?
+    assert_equal 'is too short (minimum is 3 characters)', action.form_model.errors[:name].first
+  end
+
 end

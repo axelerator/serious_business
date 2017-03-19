@@ -8,8 +8,8 @@ module SeriousBusiness
     def self.att(name, options = {})
       name = name.to_sym
       self.form_model_class.send(:attr_accessor, name)
-      if !!options[:presence]
-        self.form_model_class.validates name, presence: true
+      if options.any?
+        self.form_model_class.validates name, options
       end
       self.needed_attributes << name
     end
