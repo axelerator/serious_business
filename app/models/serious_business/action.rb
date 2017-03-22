@@ -18,9 +18,38 @@ module SeriousBusiness
       @_required_attributes ||= []
     end
 
+    class MissingModelException < StandardError
+      def initialize(model_names)
+        method_names = model_names.map{|n| "for_#{n}"}.join(', ')
+        super("You have to call the following methods before setting params #{method_names}")
+      end
+    end
+
+    def with_params(params = {})
+      if params.respond_to? :require
+        params = params
+                  .require(param_name)
+                  .permit self.needed_attributes
+      end
+
+      # make sure 'needed' models were set before trying to apply params
+      missing_values = self.class.required_attributes.select do |needed_name|
+        self.send(needed_name).nil?
+      end
+      raise MissingModelException.new(missing_values) if missing_values.any?
+
+      init_from_needed # this may be implemented by child actions
+      form_model.assign_attributes(params) unless params.empty?
+      self
+    end
+
     def self.needs(name)
       required_attributes << name.to_sym
       self.send(:attr_reader, name)
+      self.send(:define_method, "for_#{name}") do |needed|
+        self.instance_variable_set("@#{name}", needed)
+        self
+      end
     end
 
     def self.guards
@@ -47,36 +76,6 @@ module SeriousBusiness
       failed_guards.empty?
     end
 
-    class BaseFormModel
-      include ActiveModel::AttributeAssignment
-      include ActiveModel::Validations
-
-      def take_attributes_from(model, fields = nil)
-        fields ||= @_action.class.needed_attributes.map(&:to_s)
-        self.assign_attributes(model.attributes.slice(*fields))
-      end
-
-      def persisted?
-        # is set on instantiation
-        @_action.persisted?
-      end
-
-      def to_key
-        nil
-      end
-
-      def to_param
-        @_action.class.param_name
-      end
-
-      def attributes
-        @_action.class.needed_attributes.inject({}) do |sum, attr_name|
-          sum[attr_name] = self.instance_variable_get("@#{attr_name}")
-          sum
-        end
-      end
-    end
-
     def self.form_model_class
       @model_class ||= begin
                         clazz = Class.new(BaseFormModel)
@@ -100,12 +99,6 @@ module SeriousBusiness
                   .require(param_name)
                   .permit self.needed_attributes
       end
-      for_model = Array.wrap(for_model)
-      self.required_attributes.each_with_index do |needed_name, idx|
-        action.instance_variable_set "@#{needed_name}", for_model[idx]
-      end
-      action.init_from_needed
-      action.form_model.assign_attributes(params) unless params.empty?
       action
     end
 

@@ -18,7 +18,7 @@ class UserTest < ActiveSupport::TestCase
 
   test 'create user action actually creates a user' do
     user = users(:admin_axel)
-    action = user.create_user(params: {name: 'MyNewUser'})
+    action = user.create_user.with_params(name: 'MyNewUser')
 
     assert_difference 'User.count' do
       action.execute!
@@ -30,7 +30,8 @@ class UserTest < ActiveSupport::TestCase
 
   test 'created user knows who created it' do
     creator = users(:admin_axel)
-    creator.create_user(params: {name: 'MyNewUser'}).execute!
+    action = creator.create_user.with_params(name: 'MyNewUser')
+    action.execute!
     new_user = User.order(:created_at).last
 
     assert_not_nil new_user.serious_affecteds.first
@@ -45,7 +46,7 @@ class UserTest < ActiveSupport::TestCase
     user = users(:user_ursel)
 
     new_name = 'NewName'
-    action = actor.update_user(for_model: user, params: {name: new_name})
+    action = actor.update_user.for_user(user).with_params(name: new_name)
     assert action.execute!
 
     reloaded_user = User.find(user.id)
@@ -56,7 +57,7 @@ class UserTest < ActiveSupport::TestCase
     actor = users(:admin_axel)
     user = users(:user_ursel)
 
-    action = actor.promote_user(for_model: user)
+    action = actor.promote_user.for_user user
     assert action.execute!
 
     reloaded_user = User.find(user.id)
@@ -67,7 +68,7 @@ class UserTest < ActiveSupport::TestCase
     promoter = users(:user_ulrich)
     promoted = users(:user_ursel)
 
-    action = promoter.promote_user(for_model: promoted)
+    action = promoter.promote_user.for_user promoted
 
     refute action.can?
     action.execute!
@@ -80,7 +81,7 @@ class UserTest < ActiveSupport::TestCase
     actor = users(:admin_axel)
     user = users(:user_ursel)
 
-    action = actor.update_user(for_model: user, params: {name: nil})
+    action = actor.update_user.for_user(user).with_params(name: nil)
     refute action.execute!
 
     assert action.form_model.errors.any?
@@ -92,12 +93,19 @@ class UserTest < ActiveSupport::TestCase
     actor = users(:admin_axel)
     user = users(:user_ursel)
 
-    action = actor.update_user(for_model: user, params: {name: 'ab'})
+    action = actor.update_user.for_user(user).with_params(name: 'ab')
     refute action.execute!
 
     assert action.form_model.errors.any?
     assert action.form_model.errors[:name].any?
     assert_equal 'is too short (minimum is 3 characters)', action.form_model.errors[:name].first
+  end
+
+  test "action with mandatory model cannot be used without" do
+    actor = users(:admin_axel)
+    assert_raises SeriousBusiness::Action::MissingModelException do
+      actor.update_user.with_params(name: 'some name')
+    end
   end
 
 end

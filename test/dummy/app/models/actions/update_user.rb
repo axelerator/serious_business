@@ -6,7 +6,6 @@ class UpdateUser < SeriousBusiness::Action
     form_model.take_attributes_from(user)
   end
 
-
   def execute
     user.update_attributes!(form_model.attributes)
     [user]
