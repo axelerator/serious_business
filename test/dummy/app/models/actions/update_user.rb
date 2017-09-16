@@ -3,7 +3,7 @@ class UpdateUser < SeriousBusiness::Action
   att :name, presence: true, length: { minimum: 3 }
 
   def init_from_needed
-    form_model.take_attributes_from(user)
+    all_attributes_from(user)
   end
 
   def execute

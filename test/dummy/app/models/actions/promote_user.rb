@@ -1,7 +1,7 @@
 class PromoteUser < SeriousBusiness::Action
   needs :user
 
-  allow_if -> { privileged? }
+  forbid_if :not_privileged { |action| !action.actor.privileged? }
 
   def execute
     user.update_attributes!(role: :privileged)

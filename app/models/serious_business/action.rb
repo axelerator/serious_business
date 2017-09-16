@@ -2,8 +2,9 @@ module SeriousBusiness
   class Action < ApplicationRecord
     self.table_name= 'serious_actions'
     belongs_to :actor, class_name: SeriousBusiness.actor_class_name
-    has_many :affecteds
-    has_many :affectables, through: :affecteds
+    has_many :affecteds, foreign_key: :serious_action_id
+    has_many :affectables, through: :affecteds, source: :affected
+    attr_accessor :transient_affected_models
 
     def self.att(name, options = {})
       name = name.to_sym
@@ -28,8 +29,9 @@ module SeriousBusiness
     def with_params(params = {})
       if params.respond_to? :require
         params = params
-                  .require(param_name)
-                  .permit self.needed_attributes
+                  .require(self.class.param_name)
+                  .permit!
+        params.to_h.slice!(*self.class.needed_attributes.map(&:to_s))
       end
 
       # make sure 'needed' models were set before trying to apply params
@@ -38,7 +40,7 @@ module SeriousBusiness
       end
       raise MissingModelException.new(missing_values) if missing_values.any?
 
-      init_from_needed # this may be implemented by child actions
+      reset_form_model
       form_model.assign_attributes(params) unless params.empty?
       self
     end
@@ -47,6 +49,7 @@ module SeriousBusiness
       required_attributes << name.to_sym
       self.send(:attr_reader, name)
       self.send(:define_method, "for_#{name}") do |needed|
+        reset_form_model
         self.instance_variable_set("@#{name}", needed)
         self
       end
@@ -57,9 +60,19 @@ module SeriousBusiness
     end
 
     IfGuard = Struct.new(:prc) do
-      def pass?(actor)
-        actor.instance_exec(&prc)
+      def pass?(action)
+        action.actor.instance_exec(action, &prc)
       end
+    end
+
+    UnlessGuard = Struct.new(:reason, :prc) do
+      def pass?(action)
+        !action.actor.instance_exec(action, &prc)
+      end
+    end
+
+    def self.forbid_if reason, &blk
+      guards << UnlessGuard.new(reason, blk)
     end
 
     def self.allow_if prc
@@ -67,9 +80,27 @@ module SeriousBusiness
     end
 
     def failed_guards
-      self.class.guards.select do |guard|
-        !guard.pass?(self.actor)
+      if_guards, unless_guards = self.class.guards
+                                    .partition{ |guard| guard.is_a?(IfGuard) }
+
+      return [] if Array.wrap(if_guards).any?{|g| g.pass?(self)}
+
+      Array.wrap(unless_guards).select do |guard|
+        !guard.pass?(self)
       end
+    end
+
+    def full_guard_messages
+      failed_guards
+        .map(&:reason)
+        .map do |reason|
+          i18n = I18n.t("serious_action.#{self.class.param_name}.guards.#{reason}")
+          if i18n.starts_with? 'translation missing:'
+            global_i18n = I18n.t("serious_action.global_guards.#{reason}")
+            i18n = global_i18n unless global_i18n.starts_with? 'translation missing:'
+          end
+          i18n
+        end.join(I18n.t('serious_action.failed_guard_join_with'))
     end
 
     def can?
@@ -103,13 +134,19 @@ module SeriousBusiness
     end
 
     def init_from_needed
+      {}
+    end
+
+    def all_attributes_from(other_model)
+      other_model.attributes.slice(*self.class.needed_attributes.map(&:to_s))
     end
 
     def form_model(params={})
       @_form_model ||= begin
+                         attributes = init_from_needed.merge(params)
                          model_instance = self.class.form_model_class.new
                          model_instance.instance_variable_set(:@_action, self)
-                         model_instance.assign_attributes(params || {})
+                         model_instance.assign_attributes(attributes)
                          model_instance
                        end
     end
@@ -135,25 +172,60 @@ module SeriousBusiness
         raise "Action with the same name already registered #{child_class.name}"
       end
 
-      puts "Registering action #{method_name}"
-
       SeriousBusiness::Actor.send(:define_method, method_name) do |params: {}, for_model: nil|
         child_class.build(actor_id: self.id, for_model: for_model, params: params)
       end
     end
 
+    def cta_label
+      I18n.t("serious_action.#{self.class.param_name}.cta")
+    end
+
+    def description
+      content = I18n.t("serious_action.#{self.class.param_name}.description")
+      if can?
+        content
+      else
+        I18n.t("serious_action.description_with_failed_guards", description: content, reasons: full_guard_messages)
+      end
+    end
+
+    def success_description
+      custom_msg = I18n.t("serious_action.#{self.class.param_name}.success_description")
+      return custom_msg unless custom_msg.starts_with? 'translation missing'
+      content = I18n.t("serious_action.#{self.class.param_name}.description")
+      I18n.t("serious_action.success_description", description: content)
+    end
+
     def execute!
-      return false unless can?
+      unless can?
+        form_model.errors.add(:base, description)
+        return false
+      end
       self.class.transaction do
         begin
           if self.class.needed_attributes.any? && !form_model.valid?
-            return nil
+            return false
           end
-          affected_models = self.execute
+          self.transient_affected_models = self.execute
+          self.transient_affected_models.each do |model|
+            model.errors.each do |key, error|
+              error_key = if self.class.needed_attributes.include? key
+                            key
+                          else
+                            :base
+                          end
+              form_model.errors.add error_key, error
+            end
+          end
+          if form_model.errors.any?
+            return false
+          end
           self.save!
-          affected_models.each do |model|
-            Affected.create!(action: self, affected: model)
+          self.transient_affected_models.each do |model|
+            SeriousBusiness::Affected.create!(action: self, affected: model)
           end
+          return true
         rescue Exception => e
           raise e
         end
@@ -164,6 +236,12 @@ module SeriousBusiness
 
     def execute
       raise "execute should be overwritten in subclass"
+    end
+
+    private
+
+    def reset_form_model
+      @_form_model = nil
     end
   end
 end
