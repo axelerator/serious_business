@@ -170,6 +170,31 @@ The latter is especially useful to give the user meaningful feedback to an unava
   <% end %>
 ```
 
+To use actions in combination with forms you need to pass a form_model object to the form helper.
+You can include `SeriousBusiness::ApplicationHelper` in your Applications ApplicationHelper to get a simple replacement for the `form_for` helper
+
+```ruby
+# app/helpers/application_helper.rb
+module ApplicationHelper
+  include SeriousBusiness::ApplicationHelper
+end
+```
+
+and use it to post to your action
+
+```haml
+= form_for_action @action, user_path(@account), method: :patch do |f|
+  - if @action.form_model.errors.any?
+    #error_explanation
+      %h2= "#{pluralize(@action.form_model.errors.count, "error")} prohibited this account from being saved:"
+      %ul
+        - @action.form_model.errors.full_messages.each do |message|
+          %li= message
+
+  .field
+    = f.label :email
+    = f.text_field :email
+```
 
 ## Contributing
 
