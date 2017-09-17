@@ -33,7 +33,7 @@ $ gem install serious_business
 
 The gem uses polymorphic associations to track the actions you specify. For that it creates some tables and a initializer you may need to modify:
 
-    rails g sorcery:install
+    rails g serious_business:install
 
 The gem expects one model class to act as *actor* for your actions. The default for this is `User`.
 
