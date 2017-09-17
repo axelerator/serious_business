@@ -1,7 +1,9 @@
-# SeriousBusiness: Best application pratices in a handsome DSL
+# SeriousBusiness: Best application practices in a handsome DSL
 
 A small library helping app developers to comply with basic usability and security pattern.
-By encapsulating business actions in separate classes good pratices are enforced and controllers and models are less likely to turn into [God objects](https://en.wikipedia.org/wiki/God_object)
+By encapsulating business actions in separate classes good practices are enforced and controllers and models are less likely to turn into [God objects](https://en.wikipedia.org/wiki/God_object)
+
+See my [motivation](https://github.com/axelerator/serious_business/wiki/Motivation)
 
 Using it you will get:
 
