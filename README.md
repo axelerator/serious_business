@@ -89,23 +89,29 @@ For the above example that means you can now call:
 
 Since we declared that this action applies to another user we can pass other user like this:
 
-    other_user = User.find(params[:user_id])
-    action = user.update_user.for_user(other_user)
+```ruby
+other_user = User.find(params[:user_id])
+action = user.update_user.for_user(other_user)
+```
 
 Since we now specified everything thats 'needed' for the action, we can ask if the action can be executed. And since we created it from an user as actor it can anwser itself:
 
-    action.can? # will return if user.admin? or user == other_user
 
+```ruby
+action.can? # will return if user.admin? or user == other_user
+```
 And since it's an action that takes further data probably generated from a form submit we have to pass that in to actually execute the action
 
-    action = user.update_user.for_user(other_user).with_params(email: 'foo@example.org')
 
-    # Note the exclamation mark at the end of 'execute!'
-    action.execute! # true if the action was executed successfully
-                    # this is transactional - no changes are made to the db
-                    # if anything prevents the action from succeeding (ie.
-                    # failing guards/permissions or validations)
+```ruby
+action = user.update_user.for_user(other_user).with_params(email: 'foo@example.org')
 
+# Note the exclamation mark at the end of 'execute!'
+action.execute! # true if the action was executed successfully
+                # this is transactional - no changes are made to the db
+                # if anything prevents the action from succeeding (ie.
+                # failing guards/permissions or validations)
+```
 Actions themselves are fully fleged ActiveRecord Models that are persisted when successfully executed. With them references to the affected models you return from you implementation of the `execute` are stored.
 
 To access the list of actions that affected an object you have to include the include `SeriousBusiness::AffectedByActions` concern. Since in this model we modify the User:
