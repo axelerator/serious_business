@@ -16,7 +16,9 @@ Gem::Specification.new do |s|
 
   s.files = Dir["{app,config,db,lib}/**/*", "MIT-LICENSE", "Rakefile", "README.md"]
 
-  s.add_dependency "rails", "~> 5.0.2"
+  s.add_dependency "rails", "~> 5.0"
+  #TODO:  for interpolation in action description need to figure out howto store interpolation
+  #s.add_dependency 'i18n-dot_lookup'
 
   s.add_development_dependency "sqlite3"
   s.add_development_dependency "byebug"

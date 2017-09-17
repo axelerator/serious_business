@@ -75,19 +75,16 @@ module SeriousBusiness
       guards << UnlessGuard.new(reason, blk)
     end
 
-    def self.allow_if prc
-      guards << IfGuard.new(prc)
+    def self.allow_if &blk
+      guards << IfGuard.new(blk)
     end
 
     def failed_guards
       if_guards, unless_guards = self.class.guards
                                     .partition{ |guard| guard.is_a?(IfGuard) }
-
       return [] if Array.wrap(if_guards).any?{|g| g.pass?(self)}
 
-      Array.wrap(unless_guards).select do |guard|
-        !guard.pass?(self)
-      end
+      Array.wrap(unless_guards).select{ |guard| !guard.pass?(self) }
     end
 
     def full_guard_messages
@@ -182,8 +179,12 @@ module SeriousBusiness
     end
 
     def description
-      content = I18n.t("serious_action.#{self.class.param_name}.description")
-      if can?
+      i18n_params = self.class.required_attributes.inject({}) do |sum, attr_name|
+        sum[attr_name] = self.instance_variable_get("@#{attr_name}")
+        sum
+      end
+      content = I18n.t("serious_action.#{self.class.param_name}.description", plan: i18n_params[:plan] )
+      if persisted? || can?
         content
       else
         I18n.t("serious_action.description_with_failed_guards", description: content, reasons: full_guard_messages)
