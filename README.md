@@ -29,6 +29,17 @@ Or install it yourself as:
 ```bash
 $ gem install serious_business
 ```
+## tl;dr
+
+  * You encapsulate business logic in *action classes*
+  * Your `User` model gets extended with methods to construct these objects
+  * Your controllers and views have a common interface to your authorization logic
+  * Actions and references to affected Objects are automatically stored when executed
+  * Action execution is automatically transactional
+  * An opinionated approach incorporating the i18n mechanism encurages consistent naming
+  * Models affected 'know' the actions they have been modified by
+  * Users 'know' all the actions they have executed
+
 ## Usage
 
 The gem uses polymorphic associations to track the actions you specify. For that it creates some tables and a initializer you may need to modify:
